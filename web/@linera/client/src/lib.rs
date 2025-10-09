@@ -102,7 +102,7 @@ pub const OPTIONS: ClientContextOptions = ClientContextOptions {
     with_wallet: None,
     chrome_trace_exporter: false,
     otel_trace_file: None,
-    otel_exporter_otlp_endpoint: None,
+    otlp_exporter_endpoint: None,
 };
 
 const BLOCK_CACHE_SIZE: usize = 5000;

@@ -2048,10 +2048,7 @@ fn init_tracing(
     if matches!(&options.command, ClientCommand::Faucet { .. }) {
         linera_base::tracing::init_with_opentelemetry(
             &options.command.log_file_name(),
-            options
-                .context_options
-                .otel_exporter_otlp_endpoint
-                .as_deref(),
+            options.context_options.otlp_exporter_endpoint.as_deref(),
         );
         Ok(None)
     } else if options.context_options.chrome_trace_exporter {

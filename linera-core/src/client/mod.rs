@@ -1168,7 +1168,6 @@ impl<Env: Environment> Client<Env> {
                 if let LocalNodeError::BlobsNotFound(_) = &err {
                     let required_blob_ids = proposal.required_blob_ids().collect::<Vec<_>>();
                     if !required_blob_ids.is_empty() {
-                        self.validator_manager.add_peer(remote_node.clone()).await;
                         let mut blobs = Vec::new();
                         for blob_id in required_blob_ids {
                             let blob_content = match self
@@ -1305,9 +1304,6 @@ impl<Env: Environment> Client<Env> {
         let timeout = self.options.blob_download_timeout;
         // Deduplicate IDs.
         let blob_ids = blob_ids.into_iter().collect::<BTreeSet<_>>();
-        self.validator_manager
-            .add_peers(remote_nodes.to_vec())
-            .await;
         stream::iter(blob_ids.into_iter().map(|blob_id| {
             communicate_concurrently(
                 remote_nodes,

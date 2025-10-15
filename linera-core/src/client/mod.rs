@@ -395,10 +395,13 @@ impl<Env: Environment> Client<Env> {
             let mut result = self.handle_certificate(certificate.clone()).await;
 
             if let Err(LocalNodeError::BlobsNotFound(blob_ids)) = &result {
-                self.remote_nodes.add_peer(remote_node.clone()).await;
                 let blobs = self
                     .remote_nodes
-                    .download_blobs(blob_ids, self.options.blob_download_timeout)
+                    .download_blobs(
+                        &[remote_node.clone()],
+                        blob_ids,
+                        self.options.blob_download_timeout,
+                    )
                     .await?
                     .ok_or_else(|| {
                         ChainClientError::RemoteNodeError(NodeError::BlobsNotFound(
@@ -692,6 +695,7 @@ impl<Env: Environment> Client<Env> {
         if let ReceiveCertificateMode::NeedsCheck = mode {
             Self::check_certificate(max_epoch, &committees, &certificate)?.into_result()?;
         }
+        let latest_committee = self.validator_nodes().await?;
         // Recover history from the network.
         self.download_certificates(block.header.chain_id, block.header.height)
             .await?;
@@ -702,7 +706,11 @@ impl<Env: Environment> Client<Env> {
                 LocalNodeError::BlobsNotFound(blob_ids) => {
                     let blobs = self
                         .remote_nodes
-                        .download_blobs(blob_ids, self.options.blob_download_timeout)
+                        .download_blobs(
+                            &latest_committee,
+                            blob_ids,
+                            self.options.blob_download_timeout,
+                        )
                         .await?
                         .ok_or(err)?;
                     self.local_node.store_blobs(&blobs).await?;
@@ -741,13 +749,12 @@ impl<Env: Environment> Client<Env> {
         } else {
             self.validator_nodes().await?
         };
-        self.remote_nodes.add_peers(nodes).await;
         if let Err(err) = self.handle_certificate(certificate.clone()).await {
             match &err {
                 LocalNodeError::BlobsNotFound(blob_ids) => {
                     let blobs = self
                         .remote_nodes
-                        .download_blobs(blob_ids, self.options.blob_download_timeout)
+                        .download_blobs(&nodes, blob_ids, self.options.blob_download_timeout)
                         .await?
                         .ok_or(err)?;
 
